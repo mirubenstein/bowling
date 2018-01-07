@@ -1,6 +1,3 @@
-class BowlingError < StandardError
-end
-
 class Frame
   attr_reader :pins
 
@@ -56,18 +53,14 @@ class LastFrame < Frame
   def valid?
     pins.all? { |p| p.between?(0, 10) } &&
       raw_score.between?(0, 30) &&
-      strike_valid?
-  end
-
-  def strike_valid?
-    case
-      when pins.first(2).sum == 20
-        true
-      when pins.first == 10
-        raw_score <= 20
-      else
-        true
-    end
+      case
+        when pins.first(2).sum == 20
+          true
+        when pins.first == 10
+          raw_score <= 20
+        else
+          true
+      end
   end
 end
 
@@ -91,14 +84,15 @@ class Game
     @current_frame.add_pins pins
     if @current_frame.done?
       frames << @current_frame
-      @current_frame = if frames.count == 9
-        LastFrame.new
-      else
-        Frame.new
-      end
+      @current_frame = frames.count == 9 ? LastFrame.new : Frame.new
     end
   end
 end
+
+
+class BowlingError < StandardError
+end
+
 
 module BookKeeping
   VERSION = 3
