@@ -1,4 +1,8 @@
 class Frame
+  MAX_ROLLS = 2
+  MIN_PINS = 0
+  MAX_PINS = 10
+
   attr_reader :pins
 
   def initialize
@@ -11,7 +15,7 @@ class Frame
   end
 
   def done?
-    strike? || pins.count == 2
+    strike? || pins.count == MAX_ROLLS
   end
 
   def score(next_frames)
@@ -28,11 +32,11 @@ class Frame
   private
 
   def spare?
-    raw_score == 10 && pins.count == 2
+    raw_score == MAX_PINS && pins.count == MAX_ROLLS
   end
 
   def strike?
-    pins.first == 10
+    pins.first == MAX_PINS
   end
 
   def raw_score
@@ -40,23 +44,26 @@ class Frame
   end
 
   def valid?
-    raw_score.between?(0, 10)
+    raw_score.between?(MIN_PINS, MAX_PINS)
   end
 end
 
 
 class LastFrame < Frame
+  MAX_ROLLS = 3
+  MAX_RAW_SCORE = 30
+
   def done?
-    pins.count == 3 || (pins.count == 2 && raw_score < 10)
+    pins.count == MAX_ROLLS || (pins.count == 2 && raw_score < MAX_PINS)
   end
 
   def valid?
-    pins.all? { |p| p.between?(0, 10) } &&
-      raw_score.between?(0, 30) &&
+    pins.all? { |p| p.between?(MIN_PINS, MAX_PINS) } &&
+      raw_score.between?(MIN_PINS, MAX_RAW_SCORE) &&
       case
         when pins.first(2).sum == 20
           true
-        when pins.first == 10
+        when pins.first == MAX_PINS
           raw_score <= 20
         else
           true
@@ -65,6 +72,7 @@ class LastFrame < Frame
 end
 
 class Game
+  FRAMES_COUNT = 10
   attr_reader :frames
 
   def initialize
@@ -73,18 +81,18 @@ class Game
   end
 
   def score
-    raise BowlingError unless frames.count == 10
+    raise BowlingError unless frames.count == FRAMES_COUNT
     frames.each.with_index(1).sum do |frame, index|
       frame.score(frames[index, index + 1] || [])
     end
   end
 
   def roll(pins)
-    raise BowlingError if frames.count == 10
+    raise BowlingError if frames.count == FRAMES_COUNT
     @current_frame.add_pins pins
     if @current_frame.done?
       frames << @current_frame
-      @current_frame = frames.count == 9 ? LastFrame.new : Frame.new
+      @current_frame = frames.count == (FRAMES_COUNT - 1) ? LastFrame.new : Frame.new
     end
   end
 end
